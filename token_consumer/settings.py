@@ -13,8 +13,10 @@ from django.test.signals import setting_changed
 
 
 DEFAULTS = {
-    'TOKEN_HEADER_PREFIX' = 'Token ',
-    'AUTH_ENDPOINTS' = {
+    'API_BASE_URL': '',
+    'TOKEN_HEADER_PREFIX': 'Token ',
+    'TOKEN_HEADER': 'Authorization',
+    'AUTH_ENDPOINTS': {
         'LOGIN': '',
         'LOGOUT': '',
         'SIGNUP': ''
@@ -32,11 +34,16 @@ class TokenSettings(object):
         self.defaults = DEFAULTS
         self.project_settings = project_settings if project_settings else getattr(settings, 'TOKEN_CONSUMER', {})
 
-        if (not self.project_settings['AUTH_ENDPOINTS']['LOGIN'] or 
-            not self.project_settings['AUTH_ENDPOINTS']['LOGOUT']):
+        if (not self.project_settings.get('AUTH_ENDPOINTS', {}).get('LOGIN', None) or 
+            not self.project_settings.get('AUTH_ENDPOINTS', {}).get('LOGOUT', None)):
                 msg = ("You MUST set the 'LOGIN' and 'LOGOUT' values" 
                        "of the TOKEN_SETTINGS['AUTH_ENDPOINTS']"
                        "in your settings file")
+                raise AttributeError(msg)
+
+        if not self.project_settings.get('API_BASE_URL', None):
+                msg = ("You MUST set the TOKEN_SETTINGS['API_BASE_URL']"
+                       "value in your settings file")
                 raise AttributeError(msg)
 
     def __getattr__(self, attr):
@@ -60,7 +67,7 @@ token_settings = TokenSettings(None)
 def reload_token_settings(*args, **kwargs):
     global token_settings
     setting, value = kwargs['setting'], kwargs['value']
-    if setting = 'TOKEN_CONSUMER':
+    if setting == 'TOKEN_CONSUMER':
         token_settings = TokenSettings(value)
 
 

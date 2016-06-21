@@ -8,7 +8,7 @@ class Token(models.Model):
         settings.AUTH_USER_MODEL, related_name='token',
         on_delete=models.CASCADE)
     
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.key
