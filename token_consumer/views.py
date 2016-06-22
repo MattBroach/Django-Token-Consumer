@@ -5,8 +5,7 @@ from .handlers import api
 from .settings import token_settings
 
 def token_logout(request, template_name="token_consumer/logout.html"):
-    api.post(request.user, 
-             token_settings.AUTH_ENDPOINTS['LOGOUT'],
-             add_header=True)
+    api.post(token_settings.AUTH_ENDPOINTS['LOGOUT'],
+             request.user)
 
     return logout(request, template_name=template_name)

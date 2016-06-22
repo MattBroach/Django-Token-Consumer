@@ -1,6 +1,6 @@
 import requests
 
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.conf import settings
 from django.shortcuts import resolve_url
 
@@ -8,17 +8,17 @@ from .models import Token
 from .settings import token_settings
 
 class APIHandler(object):
-    def get(self, user, url, add_header=False):
-        return self._api_call(user, url, 'get', add_header=add_header)
+    def get(self, url, user=None):
+        return self._api_call(url, 'get', user=user)
 
-    def post(self, user, url, add_header=False, data={}):
-        return self._api_call(user, url, 'post', add_header=add_header, data=data)
+    def post(self, url, user=None, data={}):
+        return self._api_call(url, 'post', user=user, data=data)
 
-    def _api_call(self, user, url, method, add_header=False, data={}):
+    def _api_call(self, url, method, user=None, data={}):
         """
         wrapper to make get calls to the target api
         """
-        headers = self.get_headers(user) if add_header else {}
+        headers = self.get_headers(user) if user else {}
 
         response = getattr(requests, method)(token_settings.API_BASE_URL + url, headers=headers, data=data)
 
@@ -45,12 +45,18 @@ class APIHandler(object):
             - 200s will return the parsed data
         """
         if response.status_code == 401:
-            # TODO: implement expired token login redirect
             return HttpResponseRedirect(resolve_url(settings.LOGIN_URL))
 
         if response.status_code == 404:
-            # TODO: implement missing 404 page
-            print("404 Error!")
+            raise Http404(
+                "The API Endpoint accessed does not exist. "
+                "Please make sure that {} is the intended endpoint"
+                "".format(response.url)
+            )
+
+        if response.status_code == 403:
+            # TODO: implement forbidden view
+            print("403 Error")
             pass
 
         if response.status_code >= 500:
@@ -64,7 +70,6 @@ class APIHandler(object):
         """
         defines how successful data is parsed and returned
         """
-        print(response.text)
         return response.json()
        
 
